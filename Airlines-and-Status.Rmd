@@ -1,0 +1,174 @@
+---
+title: "Airlines and Status"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    code_folding: hide
+---
+
+
+
+```{r knitr_init, echo=TRUE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+
+
+
+```{r, echo=TRUE}
+# import required libraries
+library('tidyr')
+library('dplyr')
+```
+
+
+
+# Introduction
+
+In this assignment, we have been provided with a small messy data that describes delays for two airloned across five destinations. Our goal is to 
+
+- Create a.csv file that includes all the information provided
+
+- Read the information from the .csv file into R, and use tidyr and dplyr as needed to tidy transform the data.
+
+- Perform analysis to compare the arroval delays for two airlines.
+
+# Create .csv file, load it in R and use tidyr and dplyr for tidy transform of the data. 
+
+
+```{r, echo=TRUE}
+
+# load the raw data
+df <- read.csv('https://raw.githubusercontent.com/anilak1978/airlines/master/airlines.csv', stringsAsFactors = FALSE, sep = ",", header=TRUE)
+head(df)
+
+```
+
+As we can see the data has missing information, empty row values and other structural issues. Our goal is to bring this dataframe into tidy data standards, which is making each column a variable.
+
+We need to fill the rows that has no values with the appropriate values
+
+
+```{r, echo=TRUE}
+
+df[2,1]="ALASKA"
+df[5,1]="AM WEST"
+df
+
+```
+
+Remove row 3 as it has NA values that we do not need
+
+
+
+```{r, echo=TRUE}
+# remove row 3 as we dont need it
+
+df=df[-3,]
+df
+
+```
+
+Assign Row numbers properly to the data frame
+
+
+
+
+```{r, echo=TRUE}
+
+rownames(df) <- 1:4
+df
+
+```
+
+Assign Column Names properly to the data frame
+
+
+
+```{r, echo=TRUE}
+
+colnames(df) <- c("Airlines", "Status", "Los Angeles", "Phoenix", "San Diego", "San Francisco", "Seattle")
+df
+
+```
+
+Transform the data
+
+
+
+```{r, echo=TRUE}
+# use gather to move from rectangular to move square (goal is to get each variablle its own column)
+df <- df %>%
+  gather(Destination, Flights, 3:7)
+df
+
+```
+
+
+```{r, echo=TRUE}
+# use spread to add ontime and delayed as column variables for better analysis
+df_2 <- spread(df, Status, Flights)
+df_2
+
+```
+
+# Perform Analysis to compare arrival delays for the two airlines.
+
+
+```{r, echo=TRUE}
+# Analysis with dplyr package - group the airlines
+
+by_airlines <- df %>%
+  group_by(Airlines, Status) %>%
+  summarise(Flights=sum(Flights))
+by_airlines
+
+```
+
+
+```{r, echo=TRUE}
+
+library('ggplot2')
+theme_set(theme_classic())
+
+ggplot(by_airlines, aes(x=Airlines, y=Flights, fill=Status))+
+  geom_bar(stat = 'identity', width = 0.5)+
+  labs(title="Airlines and Status")
+
+
+```
+
+When we compare the on time and delayed distribution between the Airlines and Flights, we see that their each has similar distribituon Alaska having 86% of their flights on time and AM West 89% of their flights on time. 
+
+We can also look at the distribution of ontime and delayed Status for Destination. 
+
+```{r, echo=TRUE}
+
+ggplot(df_2, aes(x=Destination, y=delayed, fill=Airlines))+
+  geom_bar(stat='identity', width = 0.5)+
+  labs(title="Destination vs Delayed")
+
+
+```
+
+
+There are more signifacntly more delayed flights in Alaska Airlines for Seattle destination, and there are significantly more delayed flights for Phoenix destination for AM West Airlines. This might be due to the amount of flights that both airlines offer to those particular destinations however based on this analysis it might make sense to take Alaska Airlines for Phoenix flights and AM West for Seattle. 
+
+# Conclusion
+
+Based on our analysis, we can see that the Status of Flights being two categories; On time or Delayed, are similar between the two Airlines, AM West flights being slighlty higher chance to be ontime. However, when we look at the destinations, we can see that Airlines Status of Flights are different between the two airlines for each destination. 
+
+
